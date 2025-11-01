@@ -156,7 +156,7 @@ export class Open implements NarrativeService, ImageService {
         if (!content) {
             throw new Error("叙述者已迷失");
         }
-        return JSON.parse(content);
+        return JSON.parse(sanitizeJsonResponse(content));
     }
 
     /**
