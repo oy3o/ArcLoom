@@ -38,7 +38,7 @@ ${jsonSchemaDescription}
 
 // Schema for the main narrative turn (MASTER_PROMPT)
 const MASTER_PROMPT_SCHEMA_DESC = `{
-  "narrativeBlock": { "id": "string", "type": "'story' | 'action' | 'system'", "text": "string", "imagePrompt": "string | undefined" },
+  "narrativeBlock": { "id": "string", "type": "'story' | 'action' | 'system'", "text": "string", "imagePrompt": "string | undefined" }, /* using "story" is sufficient, unless it's a brief action response. */
   "choices": [ { "text": "string", "prompt": "string" } ],
   "gameStateUpdate": { /* An object containing optional updates to player, companions, or world state */ }
 }`;
