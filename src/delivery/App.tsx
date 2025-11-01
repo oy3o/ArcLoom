@@ -21,7 +21,30 @@ import { LoadingSpinner } from './components/ui/LoadingSpinner';
 import { BackendManagementScreen } from './components/BackendManagementScreen';
 import { Menu } from 'lucide-react';
 
+
 // Helper function for deep merging game state updates
+function updateCompanions(companions, updates) {
+  // 创建一个从 id 到伙伴对象的映射，以便快速查找
+  const companionMap = new Map(companions.map(c => [c.id, c]));
+
+  // 遍历更新数组
+  for (const update of updates) {
+    // 检查是否存在具有相同 id 的伙伴对象
+    if (companionMap.has(update.id)) {
+      // 获取原始的伙伴对象
+      const originalCompanion = companionMap.get(update.id);
+
+      // 使用 Object.assign 将更新对象的属性合并到原始对象中
+      // 这会覆盖现有属性并添加新属性
+      Object.assign(originalCompanion, update);
+    }
+  }
+
+  // 返回更新后的数组
+  return companions;
+}
+
+
 const mergeGameState = (prevState: GameState, updates: Partial<GameState>): GameState => {
   const newState = { ...prevState };
   if (updates.player) {
@@ -34,7 +57,7 @@ const mergeGameState = (prevState: GameState, updates: Partial<GameState>): Game
     newState.world = { ...prevState.world, ...updates.world };
   }
   if (updates.companions) {
-    newState.companions = updates.companions;
+    newState.companions = updateCompanions(prevState.companions, updates.companions);
   }
   if (updates.setup) {
     newState.setup = { ...prevState.setup, ...updates.setup };
@@ -286,16 +309,17 @@ const App: React.FC = () => {
       setGameState(prev => {
         const newState = JSON.parse(JSON.stringify(prev));
         if (itemType === 'narrative') {
-          const block = newState.narrativeLog.find((b: NarrativeBlock) => b.id === itemId);
+          const block = newState.narrativeLog.find((b: NarrativeBlock) => b?.id === itemId);
           if (block) block.imageUrl = imageUrl;
         } else {
-          const companion = newState.companions.find((c: any) => c.id === itemId);
+          const companion = newState.companions.find((c: any) => c?.id === itemId);
           if (companion) companion.imageUrl = imageUrl;
         }
         return newState;
       });
     } catch (e) {
       gameState.setup.isImageGenerationEnabled = false
+      setGameState(gameState)
       console.error(`Failed to generate image: ${(e as Error).message}`);
     }
   }, [getImageService, gameState.setup.isImageGenerationEnabled]);
