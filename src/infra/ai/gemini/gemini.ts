@@ -7,7 +7,7 @@ import { ResponseSchema, STEP_1_SCHEMA, STEP_2_SCHEMA, STEP_3_SCHEMA, STEP_4_SCH
 // A utility to safely extract the streaming narrative text.
 function extractNarrativeText(partialJson: string): string {
     const textKey = '"text": "';
-    const startIndex = partialJson.lastIndexOf(textKey);
+    const startIndex = partialJson.indexOf(textKey);
     if (startIndex === -1) return '';
     const textValueStart = startIndex + textKey.length;
     let rawText = partialJson.substring(textValueStart);

@@ -30,7 +30,7 @@ function extractNarrativeText(partialJson: string): string {
     // Find the last occurrence of the pattern `"narrativeBlock": { ... "text": "`
     // This is more robust than a simple indexOf.
     const textKeyPattern = '"text": "';
-    let textStartIndex = partialJson.lastIndexOf(textKeyPattern);
+    let textStartIndex = partialJson.indexOf(textKeyPattern);
 
     if (textStartIndex === -1) {
         return ''; // The text field hasn't started streaming yet.
