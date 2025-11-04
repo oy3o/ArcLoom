@@ -85,8 +85,6 @@ export class Gemini implements NarrativeService, ImageService {
                     temperature: 0.85,
                     topP: 1.0,
                     topK: 40,
-                    presencePenalty: 0.5,
-                    frequencyPenalty: 0.5,
                 },
             });
 
