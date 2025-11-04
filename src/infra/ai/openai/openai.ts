@@ -14,16 +14,8 @@ import {
 } from '@/domain';
 
 // Import the prompts specifically adapted for OpenAI
-import {
-    MASTER_PROMPT_OPENAI,
-    STEP_1_PROMPT_OPENAI,
-    STEP_2_PROMPT_OPENAI,
-    STEP_3_PROMPT_OPENAI,
-    STEP_4_PROMPT_OPENAI,
-    STEP_5_PROMPT_OPENAI,
-    STEP_6_PROMPT_OPENAI,
-} from './schema';
-
+import { MASTER_PROMPT, STEP_1_PROMPT, STEP_2_PROMPT, STEP_3_PROMPT, STEP_4_PROMPT, STEP_5_PROMPT, STEP_6_PROMPT } from '../prompts'
+import { ResponseSchema, STEP_1_SCHEMA, STEP_2_SCHEMA, STEP_3_SCHEMA, STEP_4_SCHEMA, STEP_5_SCHEMA, STEP_6_SCHEMA } from './schema';
 import { sanitizeJsonResponse } from '@/pkg/json-helpers';
 
 function extractNarrativeText(partialJson: string): string {
@@ -80,23 +72,68 @@ export class Open implements NarrativeService, ImageService {
     }
 
     /**
+     * A helper method for making non-streaming world generation API calls.
+     */
+    private async callWorldGenStep(prompt: string, schema: any, context?: any): Promise<any> {
+        if (!this.config?.modelId) {
+            throw new Error("叙述者已失联");
+        }
+        const fullPrompt = context ? prompt.replace('{CONTEXT}', JSON.stringify(context, null, 2)) : prompt;
+
+        const response = await this.ai.chat.completions.create({
+            model: this.config.modelId,
+            messages: [{ role: "system", content: fullPrompt },{ role: "user", content: "请确保枚举类型正确 ['力量体系', '地点', '组织', '历史', '传说'] " }],
+            response_format: {
+                type: "json_schema",
+                json_schema: {
+                    name: 'system_data',
+                    schema: schema,
+                }
+            },
+        });
+
+        const content = response.choices[0].message.content;
+        if (!content) {
+            throw new Error("叙述者已迷失");
+        }
+        return JSON.parse(sanitizeJsonResponse(content));
+    }
+
+    /**
      * Generates the next turn in the narrative using OpenAI's streaming chat completions.
      */
     async GetNextStep(playerInput: string, currentState: GameState, callbacks: StreamingCallbacks): Promise<void> {
         const { onChunk, onComplete, onError } = callbacks;
+        if (!this.config?.modelId) {
+            onError(new Error("叙述者已失联"));
+            return;
+        }
 
         try {
-            const systemPrompt = MASTER_PROMPT_OPENAI(currentState.setup);
-            const userContent = `PLAYER INPUT: "${playerInput}"\n\nCURRENT GAME STATE:\n${JSON.stringify(currentState, null, 2)}`;
+            const stateForApi = {
+                ...currentState,
+                narrativeLog: currentState.narrativeLog.map(({ imageUrl, ...block }) => block),
+                companions: currentState.companions.map(({ imageUrl, ...companion }) => companion),
+            };
+
+            const responseSchema = ResponseSchema(currentState.world.playerStatsSchema);
+            const systemInstruction = MASTER_PROMPT(currentState.setup);
+            const userContent = `PLAYER INPUT: "${playerInput}"\n\nCURRENT GAME STATE:\n${JSON.stringify(stateForApi, null, 2)}\n`;
 
             const stream = await this.ai.chat.completions.create({
                 model: this.config.modelId,
                 messages: [
-                    { role: "system", content: systemPrompt },
+                    { role: "system", content: systemInstruction },
                     { role: "user", content: userContent }
                 ],
                 stream: true,
-                response_format: { type: "json_object" }, // Crucial for reliable JSON output
+                response_format: {
+                    type: "json_schema",
+                    json_schema: {
+                        name: 'system_data',
+                        schema: responseSchema
+                    }
+                },
             });
 
             let accumulatedJson = '';
@@ -141,47 +178,26 @@ export class Open implements NarrativeService, ImageService {
         }
     }
 
-    /**
-     * A helper method for making non-streaming world generation API calls.
-     */
-    private async callWorldGenStep(prompt: string, context?: any): Promise<any> {
-        const fullPrompt = context ? prompt.replace('{CONTEXT}', JSON.stringify(context, null, 2)) : prompt;
-
-        const response = await this.ai.chat.completions.create({
-            model: this.config.modelId,
-            messages: [{ role: "system", content: fullPrompt }],
-            response_format: { type: "json_object" },
-        });
-
-        const content = response.choices[0].message.content;
-        if (!content) {
-            throw new Error("叙述者已迷失");
-        }
-        return JSON.parse(sanitizeJsonResponse(content));
-    }
-
-    /**
-     * Generates a new game world using a sequence of calls to the OpenAI API.
-     */
     async GenerateWorld(setupOptions: GameSetupOptions, setLoadingMessage: (message: string) => void): Promise<WorldGenerationOutput> {
+        const modelId = setupOptions.modelId;
         try {
             setLoadingMessage('解析世界基质...');
-            const step1Data = await this.callWorldGenStep(STEP_1_PROMPT_OPENAI(setupOptions));
-            const context1 = { lore: step1Data.lore };
+            const step1Data = await this.callWorldGenStep(STEP_1_PROMPT(setupOptions), STEP_1_SCHEMA);
+            const context1 = { lore: [...step1Data.lore] };
 
             setLoadingMessage('探查人类分布...');
             const [step2Data, step3Data] = await Promise.all([
-                this.callWorldGenStep(STEP_2_PROMPT_OPENAI(setupOptions), context1),
-                this.callWorldGenStep(STEP_3_PROMPT_OPENAI(setupOptions), context1)
+                this.callWorldGenStep(STEP_2_PROMPT(setupOptions), STEP_2_SCHEMA, context1),
+                this.callWorldGenStep(STEP_3_PROMPT(setupOptions), STEP_3_SCHEMA, context1)
             ]);
 
             const context3 = { lore: [...context1.lore, ...step3Data.lore] };
             setLoadingMessage('触摸历史刻痕...');
-            const step4Data = await this.callWorldGenStep(STEP_4_PROMPT_OPENAI(setupOptions), context3);
+            const step4Data = await this.callWorldGenStep(STEP_4_PROMPT(setupOptions), STEP_4_SCHEMA, context3);
 
             const context4 = { lore: [...context3.lore, ...step4Data.lore] };
             setLoadingMessage('占卜羁绊目标...');
-            const step5Data = await this.callWorldGenStep(STEP_5_PROMPT_OPENAI(setupOptions), context4);
+            const step5Data = await this.callWorldGenStep(STEP_5_PROMPT(setupOptions), STEP_5_SCHEMA, context4);
 
             const fullWorldContext = {
                 lore: [...context4.lore, ...(step5Data.lore || [])],
@@ -190,109 +206,86 @@ export class Open implements NarrativeService, ImageService {
             };
 
             setLoadingMessage('锚定时空分支...');
-            const step6Data = await this.callWorldGenStep(STEP_6_PROMPT_OPENAI(setupOptions), fullWorldContext);
+            const step6Data = await this.callWorldGenStep(STEP_6_PROMPT(setupOptions), STEP_6_SCHEMA, fullWorldContext);
 
-
-            setLoadingMessage('时空已锚定');
-            return {
+            const finalOutput: WorldGenerationOutput = {
                 lore: fullWorldContext.lore,
                 mainQuests: step6Data.mainQuests,
                 companions: fullWorldContext.companions,
                 playerStatsSchema: fullWorldContext.playerStatsSchema,
             };
 
+            setLoadingMessage('时空已锚定');
+            return finalOutput;
         } catch (error) {
-            console.error(`叙述者 ${setupOptions.modelId} 陷入混乱:`, error);
+            console.error(`叙述者 ${modelId} 陷入混乱:`, error);
             throw new Error("时空锚定失败, 与以太之网的连接不稳定");
         }
     }
 
-    /**
-     * Completes a partially defined world using OpenAI.
-     */
-    async CompleteWorld(
-        partialData: Partial<WorldGenerationOutput>,
-        setupOptions: GameSetupOptions,
-        setLoadingMessage: (message: string) => void
-    ): Promise<WorldGenerationOutput> {
-        try {
-            // Initialize our working copy of the world data
-            const completedData: WorldGenerationOutput = {
-                lore: partialData.lore || [],
-                mainQuests: partialData.mainQuests || [],
-                companions: partialData.companions || [],
-                playerStatsSchema: partialData.playerStatsSchema || [],
-            };
+    async CompleteWorld(partialData: Partial<WorldGenerationOutput>, setupOptions: GameSetupOptions, setLoadingMessage: (message: string) => void): Promise<WorldGenerationOutput> {
+        const completedData: WorldGenerationOutput = {
+            lore: partialData.lore || [],
+            mainQuests: partialData.mainQuests || [],
+            companions: partialData.companions || [],
+            playerStatsSchema: partialData.playerStatsSchema || [],
+        };
 
-            // A world cannot be completed from nothing. It needs a conceptual seed.
-            if (completedData.lore.length === 0) {
-                throw new Error("无法锚定没有传说的时空");
-            }
-
-            // Helper function to get the most current state of the world for context
-            const getContext = () => ({
-                lore: completedData.lore,
-                mainQuests: completedData.mainQuests,
-                companions: completedData.companions,
-                playerStatsSchema: completedData.playerStatsSchema,
-            });
-
-            // Step 2: Generate Player Stats if they are missing
-            if (!completedData.playerStatsSchema || completedData.playerStatsSchema.length === 0) {
-                setLoadingMessage('解析世界基质...');
-                const data = await this.callWorldGenStep(STEP_2_PROMPT_OPENAI(setupOptions), getContext());
-                completedData.playerStatsSchema = data.playerStatsSchema;
-            }
-
-            // Step 3: Generate Factions and Locations if they are missing
-            if (!completedData.lore.some(l => l.type === '组织' || l.type === '地点')) {
-                setLoadingMessage('探查人类分布...');
-                const data = await this.callWorldGenStep(STEP_3_PROMPT_OPENAI(setupOptions), getContext());
-                // Merge new lore, avoiding duplicates
-                const newLore = (data.lore as WorldLoreItem[]).filter(newItem =>
-                    !completedData.lore.some(existingItem => existingItem.title === newItem.title)
-                );
-                completedData.lore.push(...newLore);
-            }
-
-            // Step 4: Generate History and Legends if they are missing
-            if (!completedData.lore.some(l => l.type === '历史')) {
-                setLoadingMessage('触摸历史刻痕...');
-                const data = await this.callWorldGenStep(STEP_4_PROMPT_OPENAI(setupOptions), getContext());
-                const newLore = (data.lore as WorldLoreItem[]).filter(newItem =>
-                    !completedData.lore.some(existingItem => existingItem.title === newItem.title)
-                );
-                completedData.lore.push(...newLore);
-            }
-
-            // Step 5: Generate Companions if they are missing
-            if (!completedData.companions || completedData.companions.length === 0) {
-                setLoadingMessage('占卜羁绊目标...');
-                const data = await this.callWorldGenStep(STEP_5_PROMPT_OPENAI(setupOptions), getContext());
-
-                // This step can also add lore (for NPCs), so we merge that too
-                if (data.lore) {
-                    const newLore = (data.lore as WorldLoreItem[]).filter(newItem =>
-                        !completedData.lore.some(existingItem => existingItem.title === newItem.title)
-                    );
-                    completedData.lore.push(...newLore);
-                }
-                completedData.companions = data.companions || [];
-            }
-
-            // Step 6: Generate Main Quests if they are missing
-            if (!completedData.mainQuests || completedData.mainQuests.length === 0) {
-                setLoadingMessage('锚定时空分支...');
-                const data = await this.callWorldGenStep(STEP_6_PROMPT_OPENAI(setupOptions), getContext());
-                completedData.mainQuests = data.mainQuests;
-            }
-
-            setLoadingMessage('时空已锚定');
-            return completedData;
-
-        } catch (error) {
-            console.error(`叙述者 ${setupOptions.modelId} 陷入混乱:`, error);
-            throw new Error("时空锚定失败, 与以太之网的连接不稳定");
+        if (completedData.lore.length === 0) {
+            throw new Error("无法锚定没有传说的时空");
         }
+
+        const getContext = () => ({
+            lore: completedData.lore,
+            mainQuests: completedData.mainQuests,
+            companions: completedData.companions,
+            playerStatsSchema: completedData.playerStatsSchema,
+        });
+
+        if (!completedData.playerStatsSchema || completedData.playerStatsSchema.length === 0) {
+            setLoadingMessage('解析世界基质...');
+            const data = await this.callWorldGenStep(STEP_2_PROMPT(setupOptions), STEP_2_SCHEMA, getContext());
+            completedData.playerStatsSchema = data.playerStatsSchema;
+        }
+
+        const hasFactions = completedData.lore.some(l => l.type === '组织');
+        if (!hasFactions) {
+            setLoadingMessage('探查人类分布...');
+            const data = await this.callWorldGenStep(STEP_3_PROMPT(setupOptions), STEP_3_SCHEMA, getContext());
+            const newLore = data.lore.filter((newItem: WorldLoreItem) =>
+                !completedData.lore.some(existingItem => existingItem.title === newItem.title)
+            );
+            completedData.lore.push(...newLore);
+        }
+
+        if (!completedData.lore.some(l => l.type === '历史')) {
+            setLoadingMessage('触摸历史刻痕...');
+            const data = await this.callWorldGenStep(STEP_4_PROMPT(setupOptions), STEP_4_SCHEMA, getContext());
+            const newLore = data.lore.filter((newItem: WorldLoreItem) =>
+                !completedData.lore.some(existingItem => existingItem.title === newItem.title)
+            );
+            completedData.lore.push(...newLore);
+        }
+
+        if (!completedData.companions || completedData.companions.length === 0) {
+            setLoadingMessage('占卜羁绊目标...');
+            const data = await this.callWorldGenStep(STEP_5_PROMPT(setupOptions), STEP_5_SCHEMA, getContext());
+            if (data.lore) {
+                const newLore = data.lore.filter((newItem: WorldLoreItem) =>
+                    !completedData.lore.some(existingItem => existingItem.title === newItem.title)
+                );
+                completedData.lore.push(...newLore);
+            }
+            completedData.companions = data.companions || [];
+        }
+
+        if (!completedData.mainQuests || completedData.mainQuests.length === 0) {
+            setLoadingMessage('锚定时空分支...');
+            const data = await this.callWorldGenStep(STEP_6_PROMPT(setupOptions), STEP_6_SCHEMA, getContext());
+            completedData.mainQuests = data.mainQuests;
+        }
+
+        setLoadingMessage('时空已锚定');
+        return completedData;
     }
 }

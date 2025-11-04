@@ -1,7 +1,7 @@
 import { OpenAI } from 'openai';
 import { AvailableModel } from '@/domain';
 
-const textKeywords = ['gpt', 'davinci', 'babbage', 'text-embedding', 'instruct', 'codex', 'moderation', 'o1', 'o3', 'o4'];
+const textKeywords = ['gpt', 'davinci', 'babbage', 'text-embedding', 'instruct', 'codex', 'moderation', 'o1', 'o3', 'o4', 'command-a', 'command-r'];
 const nonTextKeywords = ['image', 'audio', 'sora', 'tts', 'whisper', 'transcribe'];
 const imageKeywords = ['dall-e', 'sora', 'image'];
 
@@ -20,15 +20,22 @@ export async function listAvailableOpenAITextModels(apiKey: string, endpoint?: s
       dangerouslyAllowBrowser: true,
     });
 
-    const response = await client.models.list();
-    const allModels = [response.data, response.body, response.body?.data].find(arr => {
+    const response = await client.models.list().catch(() => {
+      const client = new OpenAI({
+        apiKey: apiKey,
+        baseURL: endpoint.replace("compatibility/", ''),
+        dangerouslyAllowBrowser: true,
+      });
+      return client.models.list();
+    });
+    const allModels = [response.data, response.body, response.body?.data, response.body?.models].find(arr => {
       return Array.isArray(arr) && arr.length > 0;
     }) || [];
 
     // Filter for models that are likely for chat/text generation
     const supportedModels = allModels
       .filter(model => {
-        const id = model.id;
+        const id = model.id || model.name;
         // 必须包含至少一个文本关键字
         const hasTextKeyword = textKeywords.some(keyword => id.includes(keyword));
         // 且不能包含任何非文本关键字
@@ -36,8 +43,8 @@ export async function listAvailableOpenAITextModels(apiKey: string, endpoint?: s
         return hasTextKeyword && !hasNonTextKeyword;
       })
       .map(model => ({
-        id: model.id,
-        name: model.id, // OpenAI models use their ID as the display name
+        id: model.id || model.name,
+        name: model.id || model.name, // OpenAI models use their ID as the display name
       }));
 
     if (supportedModels.length === 0) {
@@ -78,7 +85,14 @@ export async function listAvailableOpenAIImageModels(apiKey: string, endpoint?: 
       dangerouslyAllowBrowser: true,
     });
 
-    const response = await client.models.list();
+    const response = await client.models.list().catch(() => {
+      const client = new OpenAI({
+        apiKey: apiKey,
+        baseURL: endpoint.replace("compatibility/", ''),
+        dangerouslyAllowBrowser: true,
+      });
+      return client.models.list();
+    });
     const allModels = [response.data, response.body, response.body?.data].find(arr => {
       return Array.isArray(arr) && arr.length > 0;
     }) || [];

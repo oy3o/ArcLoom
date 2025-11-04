@@ -1,79 +1,193 @@
-/**
- * This module adapts the base prompts for use with OpenAI-compatible models.
- * It decorates the original prompts with explicit instructions to ensure
- * reliable JSON output when using OpenAI's JSON mode.
- */
+import { GameState, INITIAL_GAME_STATE } from '@/domain';
+import { LORE_TYPES_ENUM } from '../prompts'
 
-import { GameSetupOptions, GameState } from '@/domain';
+export const ResponseSchema = (playerStatsSchema: GameState['world']['playerStatsSchema']) => {
+    const statsProperties = {};
+    // 确保 schemaSource 有一个保底值
+    const schemaSource = (playerStatsSchema && playerStatsSchema.length > 0)
+        ? playerStatsSchema
+        : Object.keys(INITIAL_GAME_STATE.player.stats).map(name => ({ name }));
 
-// 1. Import all the original, base prompts with aliases to avoid name clashes.
-import {
-    MASTER_PROMPT as BASE_MASTER_PROMPT,
-    STEP_1_PROMPT as BASE_STEP_1_PROMPT,
-    STEP_2_PROMPT as BASE_STEP_2_PROMPT,
-    STEP_3_PROMPT as BASE_STEP_3_PROMPT,
-    STEP_4_PROMPT as BASE_STEP_4_PROMPT,
-    STEP_5_PROMPT as BASE_STEP_5_PROMPT,
-    STEP_6_PROMPT as BASE_STEP_6_PROMPT,
-} from '../prompts';
+    schemaSource.forEach(stat => {
+        statsProperties[stat.name] = { "type": "integer" };
+    });
 
-// 2. Define a decorator function that appends the strict JSON instructions.
-/**
- * A decorator function that wraps a base prompt with strict instructions for OpenAI's JSON mode.
- * @param basePrompt The original prompt content.
- * @param jsonSchemaDescription A string representing the expected JSON structure.
- * @returns A new prompt string optimized for OpenAI.
- */
-const createOpenAIPrompt = (basePrompt: string, jsonSchemaDescription: string): string => {
-    return `${basePrompt}
-
-**CRITICAL INSTRUCTION**: Your entire response MUST be a single, valid JSON object that strictly adheres to the structure described below. Do not include any explanatory text, markdown formatting (like \`\`\`json), or any other characters before or after the JSON object.
-
-**REQUIRED JSON STRUCTURE:**
-${jsonSchemaDescription}
-`;
+    return {
+        "type": "object",
+        "properties": {
+            "narrativeBlock": {
+                "type": "object",
+                "properties": {
+                    "id": { "type": "string" },
+                    "type": { "type": "string" },
+                    "text": { "type": "string" },
+                    "imagePrompt": { "type": "string" },
+                },
+                "required": ["id", "type", "text"],
+            },
+            "choices": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "text": { "type": "string" },
+                        "prompt": { "type": "string" },
+                    },
+                    "required": ["text", "prompt"],
+                },
+            },
+            "gameStateUpdate": {
+                "type": "object",
+                "properties": {
+                    "player": {
+                        "type": "object",
+                        "properties": {
+                            "name": { "type": "string" },
+                            "level": { "type": "integer" },
+                            "currentPower": {
+                                "type": "object",
+                                "properties": {
+                                    "domain": { "type": "string" },
+                                    "sequence": { "type": "integer" },
+                                    "name": { "type": "string" },
+                                    "description": { "type": "string" },
+                                    "abilities": { "type": "array", "items": { "type": "string" } },
+                                },
+                            },
+                            "stats": { "type": "object", "properties": statsProperties },
+                            "inventory": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": { "type": "string" },
+                                        "name": { "type": "string" },
+                                        "description": { "type": "string" },
+                                        "type": { "type": "string" },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "companions": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": { "type": "string" },
+                                "name": { "type": "string" },
+                                "title": { "type": "string" },
+                                "affinity": { "type": "integer" },
+                                "backstory": { "type": "string" },
+                            },
+                            "required": ["id"],
+                        },
+                    },
+                    "world": {
+                        "type": "object",
+                        "properties": {
+                            "location": { "type": "string" },
+                            "time": { "type": "string" },
+                        },
+                    },
+                },
+            },
+        },
+        "required": ["narrativeBlock", "choices", "gameStateUpdate"],
+    };
 };
 
-// 3. Define the string descriptions for each required JSON schema.
+export const STEP_1_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "lore": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "title": { "type": "string" },
+                    "description": { "type": "string" },
+                    "type": { "type": "string", "enum": LORE_TYPES_ENUM },
+                },
+                "required": ["title", "description", "type"],
+            }
+        }
+    },
+    "required": ["lore"],
+};
 
-// Schema for the main narrative turn (MASTER_PROMPT)
-const MASTER_PROMPT_SCHEMA_DESC = `{
-  "narrativeBlock": { "id": "string", "type": "'story' | 'action' | 'system'", "text": "string", "imagePrompt": "string | undefined" }, /* using "story" is sufficient, unless it's a brief action response. */
-  "choices": [ { "text": "string", "prompt": "string" } ],
-  "gameStateUpdate": { /* An object containing optional updates to player, companions, or world state */ }
-}`;
+export const STEP_2_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "playerStatsSchema": {
+            "type": "array",
+            "description": "定义此世界观下的核心玩家属性",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": { "type": "string", "description": "属性的名称, e.g., '根骨' or '理智'." },
+                    "description": { "type": "string", "description": "该属性作用的简短描述。" },
+                },
+                "required": ["name", "description"],
+            }
+        }
+    },
+    "required": ["playerStatsSchema"],
+};
 
-// Schema for World Gen Step 1: Foundation (Lore)
-const STEP_1_SCHEMA_DESC = `{
-  "lore": [ { "title": "string", "description": "string", "type": "'力量体系' | '地点' | '组织' | '历史' | '传说'" } ]
-}`;
+export const STEP_3_SCHEMA = STEP_1_SCHEMA;
 
-// Schema for World Gen Step 2: Core Attributes
-const STEP_2_SCHEMA_DESC = `{
-  "playerStatsSchema": [ { "name": "string", "description": "string" } ]
-}`;
+export const STEP_4_SCHEMA = STEP_1_SCHEMA;
 
-// Schema for World Gen Step 3 & 4: Factions, Locations, History (Lore)
-const STEP_3_AND_4_SCHEMA_DESC = STEP_1_SCHEMA_DESC; // They share the same output structure
+export const STEP_5_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "companions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": { "type": "string" },
+                    "name": { "type": "string" },
+                    "title": { "type": "string" },
+                    "affinity": { "type": "integer" },
+                    "backstory": { "type": "string" },
+                    "imagePrompt": { "type": "string", "description": "为该角色生成一张高质量'写实感动漫风格, 电影级光照'的肖像画的详细提示。" },
+                },
+                "required": ["id", "name", "title", "affinity", "backstory", "imagePrompt"],
+            }
+        },
+        "lore": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "title": { "type": "string" },
+                    "description": { "type": "string" },
+                    "type": { "type": "string", "enum": LORE_TYPES_ENUM },
+                },
+                "required": ["title", "description", "type"],
+            }
+        }
+    },
+    "required": ["companions", "lore"],
+};
 
-// Schema for World Gen Step 5: Characters (Companions & Lore)
-const STEP_5_SCHEMA_DESC = `{
-  "companions": [ { "id": "string", "name": "string", "title": "string", "affinity": "number", "backstory": "string", "imagePrompt": "string" } ],
-  "lore": [ { "title": "string", "description": "string", "type": "'力量体系' | '地点' | '组织' | '历史' | '传说'" } ]
-}`;
-
-// Schema for World Gen Step 6: Main Quests
-const STEP_6_SCHEMA_DESC = `{
-  "mainQuests": [ { "title": "string", "description": "string" } ]
-}`;
-
-
-// 4. Export the decorated prompts for use in the OpenAI service.
-
-export const MASTER_PROMPT_OPENAI = (setup: GameState['setup']) => createOpenAIPrompt(BASE_MASTER_PROMPT(setup), MASTER_PROMPT_SCHEMA_DESC);
-export const STEP_1_PROMPT_OPENAI = (setup: GameSetupOptions) => createOpenAIPrompt(BASE_STEP_1_PROMPT(setup), STEP_1_SCHEMA_DESC);
-export const STEP_2_PROMPT_OPENAI = (setup: GameSetupOptions) => createOpenAIPrompt(BASE_STEP_2_PROMPT(setup), STEP_2_SCHEMA_DESC);
-export const STEP_3_PROMPT_OPENAI = (setup: GameSetupOptions) => createOpenAIPrompt(BASE_STEP_3_PROMPT(setup), STEP_1_SCHEMA_DESC);
-export const STEP_4_PROMPT_OPENAI = (setup: GameSetupOptions) => createOpenAIPrompt(BASE_STEP_4_PROMPT(setup), STEP_1_SCHEMA_DESC);
-export const STEP_5_PROMPT_OPENAI = (setup: GameSetupOptions) => createOpenAIPrompt(BASE_STEP_5_PROMPT(setup), STEP_5_SCHEMA_DESC);
-export const STEP_6_PROMPT_OPENAI = (setup: GameSetupOptions) => createOpenAIPrompt(BASE_STEP_6_PROMPT(setup), STEP_6_SCHEMA_DESC);
+export const STEP_6_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "mainQuests": {
+            "type": "array",
+            "description": "游戏的核心主线任务。",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "title": { "type": "string" },
+                    "description": { "type": "string" },
+                },
+                "required": ["title", "description"],
+            }
+        }
+    },
+    "required": ["mainQuests"],
+};

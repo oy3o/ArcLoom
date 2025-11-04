@@ -178,7 +178,6 @@ export class Gemini implements NarrativeService, ImageService {
     }
 
     async CompleteWorld(partialData: Partial<WorldGenerationOutput>, setupOptions: GameSetupOptions, setLoadingMessage: (message: string) => void): Promise<WorldGenerationOutput> {
-        const modelId = setupOptions.modelId;
         const completedData: WorldGenerationOutput = {
             lore: partialData.lore || [],
             mainQuests: partialData.mainQuests || [],
