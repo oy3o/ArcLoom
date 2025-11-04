@@ -106,6 +106,7 @@ export class Open implements NarrativeService, ImageService {
                 onChunk(narrativeText);
             }
             const sanitizedJson = sanitizeJsonResponse(accumulatedJson);
+            console.log(sanitizedJson)
             const finalResponse: Response = JSON.parse(sanitizedJson);
             onComplete(finalResponse);
 

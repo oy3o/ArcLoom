@@ -95,9 +95,9 @@ export class Gemini implements NarrativeService, ImageService {
                 onChunk(narrativeText);
             }
 
+            console.log(accumulatedJson)
             const finalResponse: Response = JSON.parse(accumulatedJson);
             onComplete(finalResponse);
-
         } catch (error) {
             console.error(`叙述者 ${currentState.setup.modelId} 陷入混乱:`, error);
             onError(new Error("与以太之网的连接不稳定"));

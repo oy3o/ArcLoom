@@ -37,6 +37,8 @@ function updateCompanions(companions, updates) {
       // 使用 Object.assign 将更新对象的属性合并到原始对象中
       // 这会覆盖现有属性并添加新属性
       Object.assign(originalCompanion, update);
+    }else{
+      companions.push(update)
     }
   }
 
