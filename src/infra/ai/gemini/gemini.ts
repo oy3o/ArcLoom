@@ -202,7 +202,7 @@ export class Gemini implements NarrativeService, ImageService {
             completedData.playerStatsSchema = data.playerStatsSchema;
         }
 
-        const hasFactions = completedData.lore.some(l => l.type === '组织');
+        const hasFactions = completedData.lore.some(l => l.type === 'Organization');
         if (!hasFactions) {
             setLoadingMessage('探查人类分布...');
             const data = await this.callWorldGenStep(STEP_3_PROMPT(setupOptions), STEP_3_SCHEMA, getContext());
@@ -212,7 +212,7 @@ export class Gemini implements NarrativeService, ImageService {
             completedData.lore.push(...newLore);
         }
 
-        if (!completedData.lore.some(l => l.type === '历史')) {
+        if (!completedData.lore.some(l => l.type === 'History')) {
             setLoadingMessage('触摸历史刻痕...');
             const data = await this.callWorldGenStep(STEP_4_PROMPT(setupOptions), STEP_4_SCHEMA, getContext());
             const newLore = data.lore.filter((newItem: WorldLoreItem) =>

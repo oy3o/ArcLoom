@@ -82,7 +82,7 @@ export class Open implements NarrativeService, ImageService {
 
         const response = await this.ai.chat.completions.create({
             model: this.config.modelId,
-            messages: [{ role: "system", content: fullPrompt },{ role: "user", content: "请确保枚举类型正确 ['力量体系', '地点', '组织', '历史', '传说'] " }],
+            messages: [{ role: "system", content: fullPrompt }, { role: "user", content: "请确保体系足够完整和真实" }],
             response_format: {
                 type: "json_schema",
                 json_schema: {
@@ -248,7 +248,7 @@ export class Open implements NarrativeService, ImageService {
             completedData.playerStatsSchema = data.playerStatsSchema;
         }
 
-        const hasFactions = completedData.lore.some(l => l.type === '组织');
+        const hasFactions = completedData.lore.some(l => l.type === 'Organization');
         if (!hasFactions) {
             setLoadingMessage('探查人类分布...');
             const data = await this.callWorldGenStep(STEP_3_PROMPT(setupOptions), STEP_3_SCHEMA, getContext());
@@ -258,7 +258,7 @@ export class Open implements NarrativeService, ImageService {
             completedData.lore.push(...newLore);
         }
 
-        if (!completedData.lore.some(l => l.type === '历史')) {
+        if (!completedData.lore.some(l => l.type === 'History')) {
             setLoadingMessage('触摸历史刻痕...');
             const data = await this.callWorldGenStep(STEP_4_PROMPT(setupOptions), STEP_4_SCHEMA, getContext());
             const newLore = data.lore.filter((newItem: WorldLoreItem) =>

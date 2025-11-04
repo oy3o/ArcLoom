@@ -1,7 +1,7 @@
 export interface WorldLoreItem {
   title: string;
   description: string;
-  type: '力量体系' | '地点' | '组织' | '历史' | '传说';
+  type: 'Power'| 'Location'| 'Organization'| 'History'| 'Legend';
 }
 
 export interface MainQuest {

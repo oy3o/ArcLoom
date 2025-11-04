@@ -37,8 +37,8 @@ export const WorldOverviewScreen: React.FC<WorldOverviewScreenProps> = ({ worldD
 
     const LoreTabContent = () => {
         const typesMap = {
-            power: '力量体系', factions: '组织', locations: '地点',
-            history: ['历史', '传说']
+            power: 'Power', factions: 'Organization', locations: 'Location',
+            history: ['History', 'Legend']
         };
         const currentTypes = typesMap[activeTab];
         const items = Array.isArray(currentTypes)
@@ -71,7 +71,7 @@ export const WorldOverviewScreen: React.FC<WorldOverviewScreenProps> = ({ worldD
                         <TabButton label="力量体系" icon={<Zap size={16} />} isActive={activeTab === 'power'} onClick={() => setActiveTab('power')} />
                         <TabButton label="组织" icon={<Shield size={16} />} isActive={activeTab === 'factions'} onClick={() => setActiveTab('factions')} />
                         <TabButton label="地点" icon={<MapPin size={16} />} isActive={activeTab === 'locations'} onClick={() => setActiveTab('locations')} />
-                        <TabButton label="历史传说" icon={<ScrollText size={16} />} isActive={activeTab === 'history'} onClick={() => setActiveTab('history')} />
+                        <TabButton label="传说/历史" icon={<ScrollText size={16} />} isActive={activeTab === 'history'} onClick={() => setActiveTab('history')} />
                     </div></div>
                     <CardContent className="pt-4 max-h-[40vh] overflow-y-auto"><LoreTabContent /></CardContent>
                 </Card>

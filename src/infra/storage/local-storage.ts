@@ -36,7 +36,7 @@ export class LocalStorageRepository implements GameStateRepository, BackendRepos
 
   async Export(state: GameState): Promise<void> {
     const getBaseName = () => {
-      const powerSystem = state.world.lore.find(item => item.type === '力量体系');
+      const powerSystem = state.world.lore.find(item => item.type === 'Power');
       if (powerSystem?.title) {
         const parts = powerSystem.title.split(/:|：|\(|（/);
         const name = (parts.length > 1 ? parts[1] : parts[0]).trim();

@@ -51,7 +51,7 @@ export const MASTER_PROMPT = (setup: GameState['setup']) => `
 **你的回应必须是一个单一、有效的JSON对象。**
 `;
 
-export const LORE_TYPES_ENUM = ['力量体系', '地点', '组织', '历史', '传说'];
+export const LORE_TYPES_ENUM = ['Power', 'Location', 'Organization', 'History', 'Legend'];
 
 // STEP 1: Foundation (Core Concept + Power System)
 export const STEP_1_PROMPT = (setup: GameSetupOptions) => `

@@ -49,7 +49,7 @@ export const WorldPanel: React.FC<{ gameState: GameState }> = ({ gameState }) =>
         acc[item.type].push(item);
         return acc;
     }, {} as Record<WorldLoreItem['type'], WorldLoreItem[]>);
-    const typeOrder: WorldLoreItem['type'][] = ['力量体系', '组织', '地点', '历史', '传说'];
+    const typeOrder: WorldLoreItem['type'][] = ['Power', 'Location', 'Organization', 'History', 'Legend'];
     const sortedTypes = Object.keys(loreByType).sort((a, b) => typeOrder.indexOf(a as any) - typeOrder.indexOf(b as any));
 
     const renderContent = () => {
