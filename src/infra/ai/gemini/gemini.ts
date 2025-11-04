@@ -73,7 +73,7 @@ export class Gemini implements NarrativeService, ImageService {
 
             const responseSchema = ResponseSchema(currentState.world.playerStatsSchema);
             const systemInstruction = MASTER_PROMPT(currentState.setup);
-            const userContent = `PLAYER INPUT: "${playerInput}"\n\nCURRENT GAME STATE:\n${JSON.stringify(stateForApi, null, 2)}\n /* updating companions, make sure to specify the id. */`;
+            const userContent = `PLAYER INPUT: "${playerInput}"\n\nCURRENT GAME STATE:\n${JSON.stringify(stateForApi, null, 2)}\n`;
 
             const stream = await this.ai.models.generateContentStream({
                 model: this.config.modelId,
@@ -82,7 +82,11 @@ export class Gemini implements NarrativeService, ImageService {
                     systemInstruction: systemInstruction,
                     responseMimeType: "application/json",
                     responseSchema: responseSchema,
-                    temperature: 0.8,
+                    temperature: 0.85,
+                    topP: 1.0,
+                    topK: 40,
+                    presencePenalty: 0.5,
+                    frequencyPenalty: 0.5,
                 },
             });
 

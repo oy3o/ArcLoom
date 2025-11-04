@@ -81,6 +81,7 @@ export const ResponseSchema = (playerStatsSchema: GameState['world']['playerStat
                                 affinity: { type: Type.INTEGER },
                                 backstory: { type: Type.STRING },
                             },
+                            required: ["id"],
                         },
                     },
                     world: {
