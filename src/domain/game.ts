@@ -7,7 +7,7 @@ import { NarrativeBlock, PlayerChoice } from './narrative';
 
 export interface AvailableModel {
   id: string;
-  displayName: string;
+  name: string;
 }
 
 export type GameGenre = '随机' | '玄幻' | '奇幻' | '修仙' | '游戏' | '悬疑';

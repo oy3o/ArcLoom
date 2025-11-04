@@ -68,9 +68,10 @@ export const AddOpenAIModal: React.FC<AddOpenAIModalProps> = ({ initialData, isE
       setError('Please provide a name and select a model after verification.');
       return;
     }
-    const id = isEditMode && initialData ? initialData.id : `openai-${Date.now()}`;
+    const id = (isEditMode && initialData) ? initialData.id : `openai-${Date.now()}`;
     
     const newConfig: BackendConfig = {
+      configType: 'single',
       id,
       name,
       provider: 'openai',
@@ -118,7 +119,7 @@ export const AddOpenAIModal: React.FC<AddOpenAIModalProps> = ({ initialData, isE
               <label className="block text-sm font-semibold text-gray-300 mb-1">选择推理者</label>
               <select value={selectedModelId} onChange={e => setSelectedModelId(e.target.value)} className="w-full p-2 bg-gray-800 rounded">
                 {availableModels.map(model => (
-                  <option key={model.id} value={model.id}>{model.displayName}</option>
+                  <option key={model.id} value={model.id}>{model.name}</option>
                 ))}
               </select>
             </div>

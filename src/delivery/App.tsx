@@ -108,15 +108,15 @@ const App: React.FC = () => {
       try {
         if (modelId) {
           const config = await backendRepository.GetById(modelId);
-          if (config) setNarrativeService(createNarrativeService(config));
+          if (config) setNarrativeService(createNarrativeService(config, backendRepository));
           else setNarrativeService(null);
         } else {
           setNarrativeService(null);
         }
 
         if (imageModelId) {
-          const config = await backendRepository.GetById(imageModelId);
-          if (config) setImageService(createImageService(config));
+          const config = await backendRepository.GetById(imageModelId); 
+          if (config) setImageService(createImageService(config, backendRepository));
           else setImageService(null);
         } else {
           setImageService(null);
@@ -138,7 +138,7 @@ const App: React.FC = () => {
     const config = await backendRepository.GetById(configId);
     if (!config) {
       const allBackends = await backendRepository.GetAll();
-      const textModels = allBackends.filter(b => b.generationType === 'text').map(b => ({ id: b.id, displayName: b.name }));
+      const textModels = allBackends.filter(b => b.generationType === 'text');
       setError(`叙述者 "${gameState.setup.modelId}" 已失联, 使用默认目标`);
       if (textModels.length) {
         gameState.setup.modelId = textModels[0].id
@@ -146,7 +146,7 @@ const App: React.FC = () => {
       }
       else throw new Error("没有连接的叙述者")
     }
-    const service = createNarrativeService(config);
+    const service = createNarrativeService(config, backendRepository);
     setNarrativeService(service);
     return service;
   }, [narrativeService, gameState.setup, backendRepository, setNarrativeService]);
@@ -158,13 +158,13 @@ const App: React.FC = () => {
     const config = await backendRepository.GetById(configId);
     if (!config) {
       const allBackends = await backendRepository.GetAll();
-      const imageModels = allBackends.filter(b => b.generationType === 'image').map(b => ({ id: b.id, displayName: b.name }));
+      const imageModels = allBackends.filter(b => b.generationType === 'image');
       setError(`回想者 "${gameState.setup.imageModelId}" 已失联, 使用默认目标`);
       if (imageModels.length) gameState.setup.imageModelId = imageModels[0].id
       else gameState.setup.isImageGenerationEnabled = false;
       setGameState(gameState)
     }
-    const service = createImageService(config);
+    const service = createImageService(config, backendRepository);
     if (!service) throw new Error("目标不是回想者");
     setImageService(service);
     return service as any; // Cast is safe due to the check above
@@ -329,8 +329,8 @@ const App: React.FC = () => {
   const handleNavigateToSetup = useCallback(async () => {
     setIsLoading(true);
     const allBackends = await backendRepository.GetAll();
-    const textModels = allBackends.filter(b => b.generationType === 'text').map(b => ({ id: b.id, displayName: b.name }));
-    const imageModels = allBackends.filter(b => b.generationType === 'image').map(b => ({ id: b.id, displayName: b.name }));
+    const textModels = allBackends.filter(b => b.generationType === 'text')
+    const imageModels = allBackends.filter(b => b.generationType === 'image')
 
     setAvailableTextModels(textModels);
     setAvailableImageModels(imageModels);
@@ -361,8 +361,8 @@ const App: React.FC = () => {
       }
 
       const allBackends = await backendRepository.GetAll();
-      const textModels = allBackends.filter(b => b.generationType === 'text').map(b => ({ id: b.id, displayName: b.name }));
-      const imageModels = allBackends.filter(b => b.generationType === 'image').map(b => ({ id: b.id, displayName: b.name }));
+      const textModels = allBackends.filter(b => b.generationType === 'text')
+      const imageModels = allBackends.filter(b => b.generationType === 'image')
 
       if (!textModels.some(b => b.id === loadedState.setup.modelId)) {
         setError(`叙述者 "${loadedState.setup.modelId}" 已失联, 使用默认目标`);

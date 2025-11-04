@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GameState, GameSetupOptions, AvailableModel } from '@/domain';
+import { GameState, GameSetupOptions, AnyBackendConfig } from '@/domain';
 import { StatusPanel } from './dashboard/StatusPanel';
 import { CompanionsPanel } from './dashboard/CompanionsPanel';
 import { WorldPanel } from './dashboard/WorldPanel';
@@ -18,8 +18,8 @@ interface PlayerDashboardProps {
   onGenerateImageUrl: (itemType: 'companion', itemId: string, prompt: string) => void;
   onClose: () => void;
   onUpdateSetup: (updates: Partial<GameSetupOptions>) => void;
-  availableTextModels: AvailableModel[];
-  availableImageModels: AvailableModel[];
+  availableTextModels: AnyBackendConfig[];
+  availableImageModels: AnyBackendConfig[];
   isImageGenerationEnabled: boolean;
 }
 

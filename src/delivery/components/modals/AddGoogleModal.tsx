@@ -67,8 +67,9 @@ export const AddGoogleModal: React.FC<AddGoogleModalProps> = ({ initialData, isE
       return;
     }
     // If we are editing, use the existing ID. Otherwise, create a new one.
-    const id = isEditMode && initialData ? initialData.id : `google-${Date.now()}`;
+    const id = (isEditMode && initialData) ? initialData.id : `google-${Date.now()}`;
     const newConfig: BackendConfig = {
+      configType: 'single',
       id,
       name,
       provider: 'google',
@@ -107,7 +108,7 @@ export const AddGoogleModal: React.FC<AddGoogleModalProps> = ({ initialData, isE
               <label className="block text-sm font-semibold text-gray-300 mb-1">选择推理者</label>
               <select value={selectedModelId} onChange={e => setSelectedModelId(e.target.value)} className="w-full p-2 bg-gray-800 rounded">
                 {availableModels.map(model => (
-                  <option key={model.id} value={model.id}>{model.displayName}</option>
+                  <option key={model.id} value={model.id}>{model.name}</option>
                 ))}
               </select>
             </div>

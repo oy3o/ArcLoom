@@ -1,20 +1,26 @@
-import { NarrativeService, ImageService } from '@/app';
-import { BackendConfig } from '@/domain';
+import { NarrativeService, ImageService, BackendRepository } from '@/app';
+import { AnyBackendConfig, isBackendPool } from '@/domain';
 import { Gemini } from './gemini';
 import { Open } from './openai';
+import { RotatingImageService, RotatingNarrativeService } from './rotating';
 
 const cachedTextModels: Map<string, Gemini> = new Map;
 const cachedImageModels: Map<string, Gemini> = new Map;
 
 /**
  * Creates an instance of a narrative service based on the provided backend configuration.
- * This acts as a factory, decoupling the application logic from the concrete
- * implementation of the AI services.
- * 
+ * This factory can create a standard service for a single API key or a rotating
+ * service for a pool of keys.
+ *
  * @param config The backend configuration selected by the user.
- * @returns An instance of a class that implements the NarrativeService interface.
+ * @param repository A repository instance needed by rotating services to fetch underlying keys.
+ * @returns An instance of a class that implements the `NarrativeService` interface.
  */
-export function createNarrativeService(config: BackendConfig): NarrativeService {
+export function createNarrativeService(config: AnyBackendConfig, repository: BackendRepository): NarrativeService {
+  if (isBackendPool(config)) {
+    return new RotatingNarrativeService(config, repository);
+  }
+
   switch (config.provider) {
     case 'google':
       let model = cachedTextModels.get(config.apiKey)
@@ -36,11 +42,19 @@ export function createNarrativeService(config: BackendConfig): NarrativeService 
 }
 
 /**
- * Factory function to create an image service instance.
- * Note: This is a simplified factory for demonstration. In a larger app,
- * this might live in the `infra` layer as well.
+ * Creates an instance of an image service based on the provided backend configuration.
+ * This factory can create a standard service for a single API key or a rotating
+ * service for a pool of keys.
+ *
+ * @param config The backend configuration selected by the user.
+ * @param repository A repository instance needed by rotating services to fetch underlying keys.
+ * @returns An instance of a class that implements the `ImageService` interface, or null.
  */
-export function createImageService(config: BackendConfig): ImageService | null {
+export function createImageService(config: AnyBackendConfig, repository: BackendRepository): ImageService | null {
+  if (isBackendPool(config)) {
+    return new RotatingImageService(config, repository);
+  }
+
   switch (config.provider) {
     case 'google':
       let model = cachedImageModels.get(config.apiKey)

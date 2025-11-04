@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { GameSetupOptions, GameGenre, GameEra, ProtagonistGender, RomanceType, BackendConfig } from '@/domain';
+import { GameSetupOptions, GameGenre, GameEra, ProtagonistGender, RomanceType, AnyBackendConfig } from '@/domain';
 import { OptionSelector } from './ui/OptionSelector';
 
 interface SetupScreenProps {
@@ -8,8 +8,8 @@ interface SetupScreenProps {
     onSetupChange: (options: Partial<GameSetupOptions>) => void;
     onGenerate: () => void;
     onImportWorld: () => void;
-    textBackends: BackendConfig[];
-    imageBackends: BackendConfig[];
+    textBackends: AnyBackendConfig[];
+    imageBackends: AnyBackendConfig[];
 }
 
 export const SetupScreen: React.FC<SetupScreenProps> = ({ setup, onSetupChange, onGenerate, onImportWorld, textBackends, imageBackends }) => {
@@ -24,15 +24,25 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({ setup, onSetupChange, 
                     <div className="mb-6">
                         <label className="block text-lg font-semibold text-purple-300 mb-2">叙述者</label>
                         <select value={setup.modelId} onChange={e => onSetupChange({ modelId: e.target.value })} className="w-full p-2 bg-gray-800 rounded">
-                            <option value="" disabled>-- Select a Text Backend --</option>
-                            {textBackends.map(b => <option key={b.id} value={b.id}>{b.displayName}</option>)}
+                            <option value="" disabled>-- 选择一个叙述者 --</option>
+                            <optgroup label="密钥池">
+                                {textBackends.filter(b => b.configType === 'pool').map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                            </optgroup>
+                            <optgroup label="独立密钥">
+                                {textBackends.filter(b => b.configType === 'single').map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                            </optgroup>
                         </select>
                     </div>
                     <div className="mb-6">
                         <label className="block text-lg font-semibold text-purple-300 mb-2">回想者</label>
                         <select value={setup.imageModelId} onChange={e => onSetupChange({ imageModelId: e.target.value })} className="w-full p-2 bg-gray-800 rounded">
-                            <option value="" disabled>-- Select an Image Backend --</option>
-                            {imageBackends.map(b => <option key={b.id} value={b.id}>{b.displayName}</option>)}
+                             <option value="" disabled>-- 选择一个回想者 --</option>
+                             <optgroup label="密钥池">
+                                {imageBackends.filter(b => b.configType === 'pool').map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                            </optgroup>
+                            <optgroup label="独立密钥">
+                                {imageBackends.filter(b => b.configType === 'single').map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                            </optgroup>
                         </select>
                     </div>
 

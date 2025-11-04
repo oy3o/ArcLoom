@@ -28,14 +28,14 @@ export async function listAvailableTextModels(apiKey: string): Promise<Available
       if (model.supportedActions.includes("generateContent")) {
         supportedModels.push({
           id: model.name,
-          displayName: model.displayName,
+          name: model.displayName,
         });
       }
     }
 
     // Sort preferred models to the top
     supportedModels.sort((a, b) => {
-      return a.displayName.localeCompare(b.displayName);
+      return a.name.localeCompare(b.name);
     });
 
     cachedTextModels.set(apiKey, supportedModels)
@@ -72,14 +72,14 @@ export async function listAvailableImageModels(apiKey: string): Promise<Availabl
       if (model.supportedActions.includes("predict")) {
         supportedModels.push({
           id: model.name,
-          displayName: model.displayName,
+          name: model.displayName,
         });
       }
     }
 
     // Sort preferred models to the top
     supportedModels.sort((a, b) => {
-      return a.displayName.localeCompare(b.displayName);
+      return a.name.localeCompare(b.name);
     });
 
     cachedImageModels.set(apiKey, supportedModels)

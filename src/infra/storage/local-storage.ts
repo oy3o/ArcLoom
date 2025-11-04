@@ -1,5 +1,5 @@
 import { GameStateRepository, BackendRepository } from '@/app'
-import { GameState, BackendConfig } from '@/domain';
+import { GameState, AnyBackendConfig } from '@/domain';
 import { importJson, exportJson } from '@/pkg/json-helpers';
 
 export class LocalStorageRepository implements GameStateRepository, BackendRepository {
@@ -67,39 +67,52 @@ export class LocalStorageRepository implements GameStateRepository, BackendRepos
     }
   }
 
-  async GetAll(): Promise<BackendConfig[]> {
+  async GetAll(): Promise<AnyBackendConfig[]> {
     const data = localStorage.getItem(this.BACKENDS_KEY);
     return data ? JSON.parse(data) : [];
   }
 
-  async Add(config: BackendConfig): Promise<void> {
+  async Add(config: AnyBackendConfig): Promise<void> {
     const allConfigs = await this.GetAll();
     // Prevent duplicates by checking for existing ID or a uniquely identifying combination
     if (allConfigs.some(c => c.id === config.id)) {
-      throw new Error(`Backend with ID ${config.id} already exists.`);
+      // In case of duplication, overwrite with a new name if needed
+      if (config.configType === 'pool') {
+        throw new Error(`Backend Pool with ID ${config.id} already exists.`);
+      }
+      // For single configs from duplication, we allow this to proceed.
     }
-    const updatedConfigs = [...allConfigs, config];
+
+    const updatedConfigs = [...allConfigs.filter(c => c.id !== config.id), config];
     localStorage.setItem(this.BACKENDS_KEY, JSON.stringify(updatedConfigs));
   }
 
   async Remove(id: string): Promise<void> {
-    const allConfigs = await this.GetAll();
+    let allConfigs = await this.GetAll();
+    // Also remove this ID from any pools that might contain it
+    allConfigs.forEach(c => {
+      if (c.configType === 'pool' && c.backendIds.includes(id)) {
+        c.backendIds = c.backendIds.filter(bid => bid !== id);
+      }
+    });
     const updatedConfigs = allConfigs.filter(c => c.id !== id);
     localStorage.setItem(this.BACKENDS_KEY, JSON.stringify(updatedConfigs));
   }
 
-  async Update(config: BackendConfig): Promise<void> {
+  async Update(config: AnyBackendConfig): Promise<void> {
     const allConfigs = await this.GetAll();
     const index = allConfigs.findIndex(c => c.id === config.id);
     if (index === -1) {
-      throw new Error(`Backend with ID ${config.id} not found for update.`);
+      // If not found, treat it as an Add operation
+      const updatedConfigs = [...allConfigs, config];
+      localStorage.setItem(this.BACKENDS_KEY, JSON.stringify(updatedConfigs));
+    } else {
+      allConfigs[index] = config;
+      localStorage.setItem(this.BACKENDS_KEY, JSON.stringify(allConfigs));
     }
-    // Replace the item at the found index
-    allConfigs[index] = config;
-    localStorage.setItem(this.BACKENDS_KEY, JSON.stringify(allConfigs));
   }
-  
-  async GetById(id: string): Promise<BackendConfig | null> {
+
+  async GetById(id: string): Promise<AnyBackendConfig | null> {
     const allConfigs = await this.GetAll();
     return allConfigs.find(c => c.id === id) || null;
   }

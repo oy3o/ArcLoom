@@ -1,5 +1,5 @@
 import React from 'react';
-import { GameState, GameSetupOptions, AvailableModel } from '@/domain';
+import { GameState, GameSetupOptions, AnyBackendConfig } from '@/domain';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Download, Save, Upload, Rewind, Home, Bot, Image } from 'lucide-react';
 
@@ -12,8 +12,8 @@ interface SystemPanelProps {
   onExport: () => void;
   isRollbackAvailable: boolean;
   onUpdateSetup: (updates: Partial<GameSetupOptions>) => void;
-  availableTextModels: AvailableModel[];
-  availableImageModels: AvailableModel[];
+  availableTextModels: AnyBackendConfig[];
+  availableImageModels: AnyBackendConfig[];
 }
 
 const ToggleSwitch: React.FC<{
@@ -81,7 +81,7 @@ export const SystemPanel: React.FC<SystemPanelProps> = ({
               >
                 <option value="" disabled>-- 选择叙述者 --</option>
                 {availableTextModels.map(model => (
-                  <option key={model.id} value={model.id}>{model.displayName}</option>
+                  <option key={model.id} value={model.id}>{model.name} {model.configType === 'pool' && ' (Pool)'}</option>
                 ))}
               </select>
             </div>
@@ -95,7 +95,7 @@ export const SystemPanel: React.FC<SystemPanelProps> = ({
               >
                 <option value="" disabled>-- 选择回想者 --</option>
                 {availableImageModels.map(model => (
-                  <option key={model.id} value={model.id}>{model.displayName}</option>
+                  <option key={model.id} value={model.id}>{model.name} {model.configType === 'pool' && ' (Pool)'}</option>
                 ))}
               </select>
             </div>

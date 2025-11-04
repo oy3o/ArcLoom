@@ -1,9 +1,9 @@
-import { BackendConfig } from '@/domain';
+import { AnyBackendConfig } from '@/domain';
 
 export interface BackendRepository {
-  GetAll(): Promise<BackendConfig[]>;
-  Add(config: BackendConfig): Promise<void>;
+  GetAll(): Promise<AnyBackendConfig[]>;
+  Add(config: AnyBackendConfig): Promise<void>;
   Remove(id: string): Promise<void>;
-  Update(config: BackendConfig): Promise<void>;
-  GetById(id: string): Promise<BackendConfig | null>;
+  Update(config: AnyBackendConfig): Promise<void>;
+  GetById(id: string): Promise<AnyBackendConfig | null>;
 }

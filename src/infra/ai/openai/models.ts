@@ -37,7 +37,7 @@ export async function listAvailableOpenAITextModels(apiKey: string, endpoint?: s
       })
       .map(model => ({
         id: model.id,
-        displayName: model.id, // OpenAI models use their ID as the display name
+        name: model.id, // OpenAI models use their ID as the display name
       }));
 
     if (supportedModels.length === 0) {
@@ -91,7 +91,7 @@ export async function listAvailableOpenAIImageModels(apiKey: string, endpoint?: 
       })
       .map(model => ({
         id: model.id,
-        displayName: model.id, // OpenAI models use their ID as the display name
+        name: model.id, // OpenAI models use their ID as the display name
       }));
 
     if (supportedModels.length === 0) {
