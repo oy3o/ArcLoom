@@ -69,7 +69,7 @@ export const INITIAL_GAME_STATE: GameState = {
   setup: {
     modelId: '',//'models/gemini-pro-latest',
     imageModelId: '',//'imagen-4.0-ultra-generate-001',
-    isImageGenerationEnabled: true,
+    isImageGenerationEnabled: false,
     genre: '随机',
     era: '随机',
     gender: '随机',

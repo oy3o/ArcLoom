@@ -53,8 +53,13 @@ export const ResponseSchema = (playerStatsSchema: GameState['world']['playerStat
                                     "description": { "type": "string" },
                                     "abilities": { "type": "array", "items": { "type": "string" } },
                                 },
+                                "required": ["description"],
                             },
-                            "stats": { "type": "object", "properties": statsProperties },
+                            "stats": {
+                                "type": "object",
+                                "properties": statsProperties,
+                                "required": Object.keys(statsProperties),
+                            },
                             "inventory": {
                                 "type": "array",
                                 "items": {
@@ -65,9 +70,11 @@ export const ResponseSchema = (playerStatsSchema: GameState['world']['playerStat
                                         "description": { "type": "string" },
                                         "type": { "type": "string" },
                                     },
+                                    "required": ["id", "name", "description", "type"],
                                 },
                             },
                         },
+                        "required": ["currentPower"],
                     },
                     "companions": {
                         "type": "array",
@@ -89,8 +96,10 @@ export const ResponseSchema = (playerStatsSchema: GameState['world']['playerStat
                             "location": { "type": "string" },
                             "time": { "type": "string" },
                         },
+                        "required": ["location", "time"],
                     },
                 },
+                "required": ["companions", "world"],
             },
         },
         "required": ["narrativeBlock", "choices", "gameStateUpdate"],

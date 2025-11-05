@@ -135,7 +135,7 @@ const App: React.FC = () => {
 
   const getNarrativeService = useCallback(async (): Promise<NarrativeService> => {
     if (narrativeService) return narrativeService;
-    const configId = gameState.setup.modelId || availableTextModels?.[0].id;
+    const configId = gameState.setup.modelId || availableTextModels?.[0]?.id;
     if (!configId) throw new Error("没有叙述者");
     const config = await backendRepository.GetById(configId);
     if (!config) {
@@ -155,7 +155,7 @@ const App: React.FC = () => {
 
   const getImageService = useCallback(async (): Promise<ImageService> => {
     if (imageService) return imageService;
-    const configId = gameState.setup.imageModelId || availableImageModels?.[0].id;
+    const configId = gameState.setup.imageModelId || availableImageModels?.[0]?.id;
     if (!configId) throw new Error("没有回想者");
     const config = await backendRepository.GetById(configId);
     if (!config) {
@@ -233,7 +233,7 @@ const App: React.FC = () => {
     if (!narrativeService) { setError("Cannot start: Narrative service is not initialized."); return; }
 
     setIsLoading(true);
-    setLoadingMessage(generatedWorld.mainQuests?.[0].title || 'Awaking...');
+    setLoadingMessage(generatedWorld.mainQuests?.[0]?.title || 'Awaking...');
 
     const initialStats: Record<string, number> = {};
     generatedWorld.playerStatsSchema.forEach(stat => { initialStats[stat.name] = 10; });
@@ -320,8 +320,6 @@ const App: React.FC = () => {
         return newState;
       });
     } catch (e) {
-      gameState.setup.isImageGenerationEnabled = false
-      setGameState(gameState)
       console.error(`Failed to generate image: ${(e as Error).message}`);
     }
   }, [getImageService, gameState.setup.isImageGenerationEnabled]);
