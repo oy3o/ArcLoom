@@ -3,6 +3,7 @@ import { NarrativeService, ImageService, WorldGenerationOutput, Response, Stream
 import { GameState, GameSetupOptions, WorldLoreItem, BackendConfig } from '@/domain';
 import { MASTER_PROMPT, STEP_1_PROMPT, STEP_2_PROMPT, STEP_3_PROMPT, STEP_4_PROMPT, STEP_5_PROMPT, STEP_6_PROMPT } from '../prompts'
 import { ResponseSchema, STEP_1_SCHEMA, STEP_2_SCHEMA, STEP_3_SCHEMA, STEP_4_SCHEMA, STEP_5_SCHEMA, STEP_6_SCHEMA } from './schema';
+import { repairJson } from '@/pkg/json-helpers';
 
 // A utility to safely extract the streaming narrative text.
 function extractNarrativeText(partialJson: string): string {
@@ -55,7 +56,7 @@ export class Gemini implements NarrativeService, ImageService {
                 temperature: 0.9,
             },
         });
-        return JSON.parse(response.text.trim());
+        return JSON.parse(repairJson(response.text));
     }
 
     async GetNextStep(playerInput: string, currentState: GameState, callbacks: StreamingCallbacks): Promise<void> {
@@ -95,8 +96,9 @@ export class Gemini implements NarrativeService, ImageService {
                 onChunk(narrativeText);
             }
 
-            console.log(accumulatedJson)
-            const finalResponse: Response = JSON.parse(accumulatedJson);
+            const sanitizedJson = repairJson(accumulatedJson);
+            console.log(sanitizedJson)
+            const finalResponse: Response = JSON.parse(sanitizedJson);
             onComplete(finalResponse);
         } catch (error) {
             console.error(`叙述者 ${currentState.setup.modelId} 陷入混乱:`, error);

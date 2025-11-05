@@ -16,7 +16,7 @@ import {
 // Import the prompts specifically adapted for OpenAI
 import { MASTER_PROMPT, STEP_1_PROMPT, STEP_2_PROMPT, STEP_3_PROMPT, STEP_4_PROMPT, STEP_5_PROMPT, STEP_6_PROMPT } from '../prompts'
 import { ResponseSchema, STEP_1_SCHEMA, STEP_2_SCHEMA, STEP_3_SCHEMA, STEP_4_SCHEMA, STEP_5_SCHEMA, STEP_6_SCHEMA } from './schema';
-import { sanitizeJsonResponse } from '@/pkg/json-helpers';
+import { repairJson } from '@/pkg/json-helpers';
 
 function extractNarrativeText(partialJson: string): string {
     // Find the last occurrence of the pattern `"narrativeBlock": { ... "text": "`
@@ -96,7 +96,7 @@ export class Open implements NarrativeService, ImageService {
         if (!content) {
             throw new Error("叙述者已迷失");
         }
-        return JSON.parse(sanitizeJsonResponse(content));
+        return JSON.parse(repairJson(content));
     }
 
     /**
@@ -142,7 +142,7 @@ export class Open implements NarrativeService, ImageService {
                 const narrativeText = extractNarrativeText(accumulatedJson);
                 onChunk(narrativeText);
             }
-            const sanitizedJson = sanitizeJsonResponse(accumulatedJson);
+            const sanitizedJson = repairJson(accumulatedJson);
             console.log(sanitizedJson)
             const finalResponse: Response = JSON.parse(sanitizedJson);
             onComplete(finalResponse);
