@@ -90,37 +90,37 @@ export const ResponseSchema = (playerStatsSchema: GameState['world']['playerStat
                             },
                             required: ["id"],
                         },
-                        lore: {
-                            type: "array",
-                            description: "新增的历史或传说, 随着故事发展增加",
-                            items: {
-                                type: "object",
-                                properties: {
-                                    title: { type: "string" },
-                                    description: { type: "string" },
-                                    type: { type: "string", enum: LORE_TYPES_ENUM },
-                                },
-                                required: ["title", "description", "type"],
-                            }
-                        },
-                        mainQuests: {
-                            type: "array",
-                            description: "新增的主线任务",
-                            items: {
-                                type: "object",
-                                properties: {
-                                    title: { type: "string" },
-                                    description: { type: "string" },
-                                },
-                                required: ["title", "description"],
-                            }
-                        }
                     },
                     world: {
                         type: "object",
                         properties: {
                             location: { type: "string" },
                             time: { type: "string" },
+                            lore: {
+                                type: "array",
+                                description: "新增的历史或传说, 随着故事发展增加",
+                                items: {
+                                    type: "object",
+                                    properties: {
+                                        title: { type: "string" },
+                                        description: { type: "string" },
+                                        type: { type: "string", enum: LORE_TYPES_ENUM },
+                                    },
+                                    required: ["title", "description", "type"],
+                                }
+                            },
+                            mainQuests: {
+                                type: "array",
+                                description: "新增的主线任务",
+                                items: {
+                                    type: "object",
+                                    properties: {
+                                        title: { type: "string" },
+                                        description: { type: "string" },
+                                    },
+                                    required: ["title", "description"],
+                                }
+                            }
                         },
                         required: ["location", "time"],
                     },
