@@ -23,27 +23,27 @@ import { Menu } from 'lucide-react';
 
 
 // Helper function for deep merging game state updates
-function updateCompanions(companions, updates) {
-  // 创建一个从 id 到伙伴对象的映射，以便快速查找
-  const companionMap = new Map(companions.map(c => [c.id, c]));
+function updateArray(origin, updates) {
+  // 创建一个从 id 到对象的映射，以便快速查找
+  const companionMap = new Map(origin.map(c => [c.id, c]));
 
   // 遍历更新数组
   for (const update of updates) {
-    // 检查是否存在具有相同 id 的伙伴对象
+    // 检查是否存在具有相同 id 的对象
     if (companionMap.has(update.id)) {
-      // 获取原始的伙伴对象
+      // 获取原始的对象
       const originalCompanion = companionMap.get(update.id);
 
       // 使用 Object.assign 将更新对象的属性合并到原始对象中
       // 这会覆盖现有属性并添加新属性
       Object.assign(originalCompanion, update);
-    }else{
-      companions.push(update)
+    } else {
+      origin.push(update)
     }
   }
 
   // 返回更新后的数组
-  return companions;
+  return origin;
 }
 
 
@@ -51,15 +51,25 @@ const mergeGameState = (prevState: GameState, updates: Partial<GameState>): Game
   const newState = { ...prevState };
   if (updates.player) {
     newState.player = { ...prevState.player, ...updates.player };
+    if (updates.player.currentPower) {
+      newState.player.currentPower = { ...prevState.player.currentPower, ...updates.player.currentPower };
+    }
     if (updates.player.stats) {
       newState.player.stats = { ...prevState.player.stats, ...updates.player.stats };
     }
   }
   if (updates.world) {
     newState.world = { ...prevState.world, ...updates.world };
+    
+    if (updates.world.lore) {
+      newState.world.lore = { ...prevState.world.lore, ...updates.world.lore };
+    }
+    if (updates.world.mainQuests) {
+      newState.world.mainQuests = { ...prevState.world.mainQuests, ...updates.world.mainQuests };
+    }
   }
   if (updates.companions) {
-    newState.companions = updateCompanions(prevState.companions, updates.companions);
+    newState.companions = updateArray(prevState.companions, updates.companions);
   }
   if (updates.setup) {
     newState.setup = { ...prevState.setup, ...updates.setup };
@@ -117,7 +127,7 @@ const App: React.FC = () => {
         }
 
         if (imageModelId) {
-          const config = await backendRepository.GetById(imageModelId); 
+          const config = await backendRepository.GetById(imageModelId);
           if (config) setImageService(createImageService(config, backendRepository));
           else setImageService(null);
         } else {

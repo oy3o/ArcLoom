@@ -54,8 +54,13 @@ export const ResponseSchema = (playerStatsSchema: GameState['world']['playerStat
                                     description: { type: Type.STRING },
                                     abilities: { type: Type.ARRAY, items: { type: Type.STRING } },
                                 },
+                                required: ["description"],
                             },
-                            stats: { type: Type.OBJECT, properties: statsProperties },
+                            stats: {
+                                type: Type.OBJECT,
+                                properties: statsProperties,
+                                required: Object.keys(statsProperties),
+                            },
                             inventory: {
                                 type: Type.ARRAY,
                                 items: {
@@ -66,12 +71,15 @@ export const ResponseSchema = (playerStatsSchema: GameState['world']['playerStat
                                         description: { type: Type.STRING },
                                         type: { type: Type.STRING },
                                     },
+                                    required: ["id", "name", "description", "type"],
                                 },
                             },
                         },
+                        required: ["currentPower"],
                     },
                     companions: {
                         type: Type.ARRAY,
+                        description: "随着故事发展,应当完善backstory",
                         items: {
                             type: Type.OBJECT,
                             properties: {
@@ -89,9 +97,36 @@ export const ResponseSchema = (playerStatsSchema: GameState['world']['playerStat
                         properties: {
                             location: { type: Type.STRING },
                             time: { type: Type.STRING },
+                            lore: {
+                                type: Type.ARRAY,
+                                description: "新增的历史或传说, 随着故事发展增加",
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        title: { type: Type.STRING },
+                                        description: { type: Type.STRING },
+                                        type: { type: Type.STRING, enum: LORE_TYPES_ENUM },
+                                    },
+                                    required: ["title", "description", "type"],
+                                },
+                            },
+                            mainQuests: {
+                                type: Type.ARRAY,
+                                description: "新增的主线任务",
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        title: { type: Type.STRING },
+                                        description: { type: Type.STRING },
+                                    },
+                                    required: ["title", "description", "type"],
+                                },
+                            },
                         },
+                        required: ["location", "time"],
                     },
                 },
+                required: ["companions"],
             },
         },
         required: ["narrativeBlock", "choices", "gameStateUpdate"],
