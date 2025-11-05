@@ -119,7 +119,7 @@ export const ResponseSchema = (playerStatsSchema: GameState['world']['playerStat
                                         title: { type: Type.STRING },
                                         description: { type: Type.STRING },
                                     },
-                                    required: ["title", "description", "type"],
+                                    required: ["title", "description"],
                                 },
                             },
                         },
